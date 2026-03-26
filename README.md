@@ -45,27 +45,28 @@ Install via Homebrew:
 ```bash
 brew install nasm make qemu
 ```
-**Important for Apple Silicon (M1/M2/M3):**
-The default `gcc` (clang) cannot easily produce 32-bit x86 code. You need a cross-compiler.
+**Important:**
+The default `gcc` (clang) cannot produce 32-bit x86 code. You **must** use a cross-compiler:
 ```bash
 brew install x86_64-elf-gcc
 ```
-*Note: You may need to update the `Makefile` to use `x86_64-elf-gcc` and `x86_64-elf-ld` if `gcc` doesn't work.*
+*Note: You will need to update the `Makefile` to use `x86_64-elf-gcc` and `x86_64-elf-ld` instead of `gcc` and `ld`.*
 
 #### Windows
 You have two main options:
 
-**Option A: WSL2 (Recommended)**
-1.  Install WSL2 (Ubuntu).
-2.  Follow the **Linux (Debian/Ubuntu)** instructions above inside the WSL terminal.
-3.  You will need an X server (like VcXsrv) to see the QEMU window, or use `qemu-system-i386 -nographic` (though you won't see VGA output).
-
-**Option B: Native Tools (MinGW + QEMU)**
+**Option A: Native Tools (Recommended)**
+This is the recommended way as it allows you to easily see the VGA output.
 1.  Install **QEMU** for Windows. Add it to your PATH.
 2.  Install **NASM** for Windows. Add it to your PATH.
-3.  Install **MinGW-w64** (or similar GCC for Windows).
+3.  Install **MinGW-w64** (via [MSYS2](https://www.msys2.org/) is recommended).
 4.  Install **Make** for Windows.
-5.  *Note:* The `Makefile` syntax might need adjustment if not running in a bash-like shell (e.g., Git Bash).
+5.  Use **Git Bash** or a similar shell to run `make`.
+
+**Option B: WSL2 (Alternative)**
+1.  Install WSL2 (Ubuntu).
+2.  Follow the **Linux (Debian/Ubuntu)** instructions above inside the WSL terminal.
+3.  *Note:* You will need an X server (like VcXsrv) or use [WSLg](https://github.com/microsoft/wslg) to see the QEMU VGA window. If you run with `-nographic`, you won't see the VGA output (which is the main goal of Stage 2).
 
 ## 🚀 Build & Run
 

@@ -37,7 +37,10 @@ start:
     call print_string
 
     mov bx, 0x1000  ; Load to address 0x1000 (ES:BX = 0x0000:0x1000)
-    mov dh, 2       ; Load 2 sectors (should be enough for our tiny C kernel)
+%ifndef KERNEL_SECTORS
+    %define KERNEL_SECTORS 1
+%endif
+    mov dh, KERNEL_SECTORS       ; Load KERNEL_SECTORS sectors (calculated by Makefile)
     mov dl, [BOOT_DRIVE]
     call disk_load
 
@@ -79,7 +82,9 @@ print_string:
     inc cx
     jmp .strlen_loop
 .strlen_done:
-    ; Now CX = length
+    ; Now CX = length, but, the following interrupt call would overwrite, so
+    ; let's save it onto the stack
+    push cx
 
     ; Get current cursor position -> DH, DL
     mov ah, 0x03    ; Function: Get Cursor Position
@@ -89,8 +94,9 @@ print_string:
     ; Print String
     mov ax, 0x1301  ; Function: Write String (AH=13h), Update Cursor (AL=01h)
     mov bx, 0x0007  ; Page 0 (BH), Attribute Light Gray on Black (BL)
+    ; CX needs to contain the number of character to print
+    pop cx
     ; BP is already set to string
-    ; CX is already set to length
     ; DH, DL are set by cursor query
     int 0x10
 

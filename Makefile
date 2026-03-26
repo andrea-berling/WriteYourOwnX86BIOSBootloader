@@ -26,10 +26,13 @@ OS_IMAGE = $(BUILD_DIR)/os-image.bin
 
 all: $(OS_IMAGE)
 
-# 1. Assemble Stage 1 Bootloader
-$(BOOT_BIN): $(BOOT_SRC)
+# 1. Assemble Stage 1 Bootloader (Depends on Kernel to know its size)
+$(BOOT_BIN): $(BOOT_SRC) $(KERNEL_BIN)
 	@mkdir -p $(BUILD_DIR)
-	$(ASM) $(ASMFLAGS) $< -o $@
+	@KERNEL_SIZE=$$(stat -c %s $(KERNEL_BIN)); \
+	KERNEL_SECTORS=$$(( (KERNEL_SIZE + 511) / 512 )); \
+	echo "Kernel size: $$KERNEL_SIZE bytes ($$KERNEL_SECTORS sectors)"; \
+	$(ASM) $(ASMFLAGS) -D KERNEL_SECTORS=$$KERNEL_SECTORS $< -o $@
 
 # 2. Compile C Kernel
 $(KERNEL_O): $(KERNEL_C)
@@ -44,7 +47,8 @@ $(KERNEL_BIN): $(KERNEL_O)
 # 4. Create Disk Image (Concatenate Bootloader + Kernel)
 $(OS_IMAGE): $(BOOT_BIN) $(KERNEL_BIN)
 	cat $^ > $@
-	# Pad with zeros to ensure it's large enough if needed
+	# Pad with zeros to ensure it's a multiple of 512 bytes (one sector)
+	truncate -s %512 $@
 
 # Run in QEMU
 run: $(OS_IMAGE)
