@@ -53,20 +53,31 @@ brew install x86_64-elf-gcc
 *Note: You will need to update the `Makefile` to use `x86_64-elf-gcc` and `x86_64-elf-ld` instead of `gcc` and `ld`.*
 
 #### Windows
-You have two main options:
 
-**Option A: Native Tools (Recommended)**
-This is the recommended way as it allows you to easily see the VGA output.
-1.  Install **QEMU** for Windows. Add it to your PATH.
-2.  Install **NASM** for Windows. Add it to your PATH.
-3.  Install **MinGW-w64** (via [MSYS2](https://www.msys2.org/) is recommended).
-4.  Install **Make** for Windows.
-5.  Use **Git Bash** or a similar shell to run `make`.
+> **Note:** These instructions are provided as a "best effort" guide. As the author does not use Windows, consider this a homework exercise to figure out the exact details! :)
 
-**Option B: WSL2 (Alternative)**
+**Recommended: MSYS2**
+
+[MSYS2](https://www.msys2.org/) provides a modern Unix-like environment on Windows and is the easiest way to get the required tools.
+
+1.  **Install MSYS2** from the official website.
+2.  **Open the MSYS2 UCRT64 terminal** and install the necessary packages:
+    ```bash
+    pacman -S mingw-w64-ucrt-x86_64-gcc \
+              mingw-w64-ucrt-x86_64-nasm \
+              mingw-w64-ucrt-x86_64-make \
+              mingw-w64-ucrt-x86_64-qemu \
+              git
+    ```
+3.  **Use `mingw32-make`** (installed with the make package) to build and run:
+    ```bash
+    mingw32-make run
+    ```
+
+**Alternative: WSL2**
 1.  Install WSL2 (Ubuntu).
 2.  Follow the **Linux (Debian/Ubuntu)** instructions above inside the WSL terminal.
-3.  *Note:* You will need an X server (like VcXsrv) or use [WSLg](https://github.com/microsoft/wslg) to see the QEMU VGA window. If you run with `-nographic`, you won't see the VGA output (which is the main goal of Stage 2).
+3.  *Note:* You will need [WSLg](https://github.com/microsoft/wslg) (standard in Windows 11) or an X server (like VcXsrv) to see the QEMU VGA window. Without a display server, you won't see the VGA output.
 
 ## 🚀 Build & Run
 

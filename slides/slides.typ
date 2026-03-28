@@ -43,7 +43,7 @@
 
 #slide("Registers")[
   - *General*: AX, BX, CX, DX (16-bit).
-  - *Segments*: CS (Code), DS (Data), SS (Stack), ES (Extra).
+  - *Segments*: CS (Code), DS (Data), SS (Stack), ES (Extra Data), FS (More Extra Data), GS (Still More Extra Data).
   - *Pointers*: SP (Stack), BP (Base), SI (Source), DI (Dest).
   - *IP*: Instruction Pointer.
 ]
@@ -67,7 +67,7 @@
   - Access to 4GB memory.
   - Memory Protection (Ring 0 vs Ring 3).
   - No BIOS interrupts! (Must write own drivers).
-  - *GDT* (Global Descriptor Table) replaces Segments.
+  - *GDT* (Global Descriptor Table) defines valid Segments.
 ]
 
 #slide("Global Descriptor Table (GDT)")[
