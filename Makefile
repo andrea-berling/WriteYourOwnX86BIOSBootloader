@@ -20,11 +20,11 @@ BUILD_DIR = build
 STAGE1_BIN = $(BUILD_DIR)/stage1.bin
 STAGE2_O = $(BUILD_DIR)/stage2.o
 STAGE2_BIN = $(BUILD_DIR)/stage2.bin
-OS_IMAGE = $(BUILD_DIR)/os-image.bin
+DISK_IMAGE = $(BUILD_DIR)/disk.img
 
 .PHONY: all clean run
 
-all: $(OS_IMAGE)
+all: $(DISK_IMAGE)
 
 # 1. Assemble Stage 1 Bootloader (Depends on stage 2 to know its size)
 $(STAGE1_BIN): $(BOOT_SRC) $(STAGE2_BIN)
@@ -44,7 +44,7 @@ $(STAGE2_BIN): $(STAGE2_O)
 	$(LD) $(LDFLAGS) -o $@ $^
 
 # 4. Create Disk Image (Concatenate Bootloader + stage2)
-$(OS_IMAGE): $(STAGE1_BIN) $(STAGE2_BIN)
+$(DISK_IMAGE): $(STAGE1_BIN) $(STAGE2_BIN)
 	cat $^ > $@
 	# Pad with zeros to ensure it's a multiple of 512 bytes (one sector)
 	@SIZE=$$(wc -c < $@); \
@@ -54,9 +54,9 @@ $(OS_IMAGE): $(STAGE1_BIN) $(STAGE2_BIN)
 	fi
 
 # Run in QEMU
-run: $(OS_IMAGE)
+run: $(DISK_IMAGE)
 	# Will also work with qemu-system-x86_64
-	qemu-system-i386 -drive format=raw,file=$(OS_IMAGE)
+	qemu-system-i386 -drive format=raw,file=$(DISK_IMAGE)
 
 clean:
 	rm -rf $(BUILD_DIR)

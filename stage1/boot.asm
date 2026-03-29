@@ -54,6 +54,9 @@ start:
     call print_string
 
 .a20_done:
+    mov bp, MSG_A20_IS_ENABLED
+    call print_string
+
     ; -------------------------------------------------------------------------
     ; 3. Load Stage 2 from Disk
     ; -------------------------------------------------------------------------
@@ -84,12 +87,13 @@ start:
 ; -----------------------------------------------------------------------------
 ; Data
 ; -----------------------------------------------------------------------------
-BOOT_DRIVE:  db 0
-MSG_STAGE1:  db 'Hello from Stage 1!', 13, 10, 0
-MSG_A20:     db 'Enabling A20...', 13, 10, 0
-MSG_A20_ERR: db 'A20 Gate Error!', 13, 10, 0
-MSG_LOAD:    db 'Loading Stage 2...', 13, 10, 0
-MSG_ERR:     db 'Disk Read Error!', 13, 10, 0
+BOOT_DRIVE:          db 0
+MSG_STAGE1:          db 'Hello from Stage 1!', 13, 10, 0
+MSG_A20:             db 'Enabling A20...', 13, 10, 0
+MSG_A20_IS_ENABLED:  db 'No wrap around detected, A20 is enabled!', 13, 10, 0
+MSG_A20_ERR:         db 'A20 Gate Error!', 13, 10, 0
+MSG_LOAD:            db 'Loading Stage 2...', 13, 10, 0
+MSG_ERR:             db 'Disk Read Error!', 13, 10, 0
 
 ; Get current cursor position -> DH, DL
 get_cursor_position:
