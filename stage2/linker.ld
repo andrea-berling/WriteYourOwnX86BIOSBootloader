@@ -1,6 +1,6 @@
 SECTIONS
 {
-    /* The BIOS loads the kernel at 0x1000 */
+    /* The BIOS loads the stage2 at 0x1000 */
     . = 0x1000;
 
     .text :

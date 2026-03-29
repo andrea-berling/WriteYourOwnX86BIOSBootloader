@@ -11,7 +11,7 @@ bios-workshop/
 ├── stage1/
 │   └── boot.asm         # Stage 1 Bootloader (16-bit Assembly)
 ├── stage2/
-│   ├── main.c           # Stage 2 Kernel (32-bit C)
+│   ├── main.c           # Stage 2 (32-bit C)
 │   └── linker.ld        # Linker Script
 ├── build/               # Build artifacts (created during build)
 ├── Makefile             # Build automation

@@ -13,39 +13,38 @@ LDFLAGS = -m elf_i386 -T stage2/linker.ld --oformat binary
 
 # Sources
 BOOT_SRC = stage1/boot.asm
-KERNEL_C = stage2/main.c
+STAGE2_C = stage2/main.c
 
 # Output
 BUILD_DIR = build
-BOOT_BIN = $(BUILD_DIR)/boot.bin
-KERNEL_O = $(BUILD_DIR)/kernel.o
-KERNEL_BIN = $(BUILD_DIR)/kernel.bin
+STAGE1_BIN = $(BUILD_DIR)/stage1.bin
+STAGE2_O = $(BUILD_DIR)/stage2.o
+STAGE2_BIN = $(BUILD_DIR)/stage2.bin
 OS_IMAGE = $(BUILD_DIR)/os-image.bin
 
 .PHONY: all clean run
 
 all: $(OS_IMAGE)
 
-# 1. Assemble Stage 1 Bootloader (Depends on Kernel to know its size)
-$(BOOT_BIN): $(BOOT_SRC) $(KERNEL_BIN)
+# 1. Assemble Stage 1 Bootloader (Depends on stage 2 to know its size)
+$(STAGE1_BIN): $(BOOT_SRC) $(STAGE2_BIN)
 	@mkdir -p $(BUILD_DIR)
-	@KERNEL_SIZE=$$(wc -c < $(KERNEL_BIN)); \
-	KERNEL_SECTORS=$$(( (KERNEL_SIZE + 511) / 512 )); \
-	echo "Kernel size: $$KERNEL_SIZE bytes ($$KERNEL_SECTORS sectors)"; \
-	$(ASM) $(ASMFLAGS) -D KERNEL_SECTORS=$$KERNEL_SECTORS $< -o $@
+	@STAGE2_SIZE=$$(wc -c < $(STAGE2_BIN)); \
+	STAGE2_SECTORS=$$(( (STAGE2_SIZE + 511) / 512 )); \
+	echo "stage2 size: $$STAGE2_SIZE bytes ($$STAGE2_SECTORS sectors)"; \
+	$(ASM) $(ASMFLAGS) -D STAGE2_SECTORS=$$STAGE2_SECTORS $< -o $@
 
-# 2. Compile C Kernel
-$(KERNEL_O): $(KERNEL_C)
+# 2. Compile C stage2
+$(STAGE2_O): $(STAGE2_C)
 	@mkdir -p $(BUILD_DIR)
 	$(CC) $(CCFLAGS) $< -o $@
 
-# 3. Link Kernel (Stage 2)
-# Removed kernel_entry.o as we now use linker script to place main()
-$(KERNEL_BIN): $(KERNEL_O)
+# 3. Link stage2 (Stage 2)
+$(STAGE2_BIN): $(STAGE2_O)
 	$(LD) $(LDFLAGS) -o $@ $^
 
-# 4. Create Disk Image (Concatenate Bootloader + Kernel)
-$(OS_IMAGE): $(BOOT_BIN) $(KERNEL_BIN)
+# 4. Create Disk Image (Concatenate Bootloader + stage2)
+$(OS_IMAGE): $(STAGE1_BIN) $(STAGE2_BIN)
 	cat $^ > $@
 	# Pad with zeros to ensure it's a multiple of 512 bytes (one sector)
 	@SIZE=$$(wc -c < $@); \
@@ -56,6 +55,7 @@ $(OS_IMAGE): $(BOOT_BIN) $(KERNEL_BIN)
 
 # Run in QEMU
 run: $(OS_IMAGE)
+	# Will also work with qemu-system-x86_64
 	qemu-system-i386 -drive format=raw,file=$(OS_IMAGE)
 
 clean:

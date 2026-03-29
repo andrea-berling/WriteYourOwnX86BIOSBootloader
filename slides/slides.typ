@@ -23,7 +23,7 @@
   - Understand how a computer boots (Legacy BIOS)
   - Write x86 Assembly (16-bit Real Mode)
   - Switch to 32-bit Protected Mode
-  - Load a C kernel
+  - Load a C stage2
 ]
 
 #slide("The Boot Process")[
@@ -85,7 +85,7 @@
 
 #slide("Workshop Steps")[
   1.  *Stage 1 (ASM)*: Setup, Enable A20, Load Stage 2.
-  2.  *Stage 2 (C)*: Kernel code.
+  2.  *Stage 2 (C)*: Print "Hello From Stage 2!" to screen.
   3.  *Linker*: Combine into flat binary.
   4.  *QEMU*: Run it!
 ]

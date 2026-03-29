@@ -2,7 +2,7 @@
 ; boot.asm - A minimal 16-bit Real Mode bootloader
 ;
 ; Goal:
-; 1. Setup stack
+; 1. Setup stack & data segments
 ; 2. Enable A20 line
 ; 3. Load Stage 2 from disk
 ; 4. Switch to 32-bit Protected Mode
@@ -13,6 +13,9 @@
 [bits 16]           ; Start in 16-bit Real Mode
 
 start:
+    ; -------------------------------------------------------------------------
+    ; 1. Setup Stack & Data Segments
+    ; -------------------------------------------------------------------------
     cli             ; Disable interrupts
     mov ax, 0       ; Set data segments to 0
     mov ds, ax
@@ -24,29 +27,51 @@ start:
     ; Save boot drive number (passed by BIOS in DL)
     mov [BOOT_DRIVE], dl
 
-    ; -------------------------------------------------------------------------
-    ; 1. Print "Hello from Stage 1"
-    ; -------------------------------------------------------------------------
+    ; Print "Hello from Stage 1!"
     mov bp, MSG_STAGE1
     call print_string
 
     ; -------------------------------------------------------------------------
-    ; 2. Load Stage 2 (Kernel) from Disk
+    ; 2. Enable A20 line
+    ; -------------------------------------------------------------------------
+    mov bp, MSG_A20
+    call print_string
+
+    call check_a20
+    cmp ax, 1
+    je .a20_done
+
+    ; BIOS enable A20
+    mov ax, 0x2401
+    int 0x15
+
+    call check_a20
+    cmp ax, 1
+    je .a20_done
+
+    ; If still failed, print error and halt
+    mov bp, MSG_A20_ERR
+    call print_string
+
+.a20_done:
+    ; -------------------------------------------------------------------------
+    ; 3. Load Stage 2 from Disk
     ; -------------------------------------------------------------------------
     mov bp, MSG_LOAD
     call print_string
 
     mov bx, 0x1000  ; Load to address 0x1000 (ES:BX = 0x0000:0x1000)
-%ifndef KERNEL_SECTORS
-    %define KERNEL_SECTORS 1
+%ifndef STAGE2_SECTORS
+    %define STAGE2_SECTORS 1
 %endif
-    mov dh, KERNEL_SECTORS       ; Load KERNEL_SECTORS sectors (calculated by Makefile)
+    mov dh, STAGE2_SECTORS       ; Load STAGE2_SECTORS sectors (calculated by Makefile)
     mov dl, [BOOT_DRIVE]
     call disk_load
 
     ; -------------------------------------------------------------------------
-    ; 3. Switch to Protected Mode
+    ; 4. Switch to Protected Mode
     ; -------------------------------------------------------------------------
+    call get_cursor_position
     cli             ; Disable interrupts for the switch
     lgdt [gdt_descriptor]
 
@@ -59,10 +84,19 @@ start:
 ; -----------------------------------------------------------------------------
 ; Data
 ; -----------------------------------------------------------------------------
-BOOT_DRIVE: db 0
-MSG_STAGE1: db 'Hello from Stage 1', 13, 10, 0
-MSG_LOAD:   db 'Loading Stage 2...', 13, 10, 0
-MSG_ERR:    db 'Disk Read Error!', 13, 10, 0
+BOOT_DRIVE:  db 0
+MSG_STAGE1:  db 'Hello from Stage 1!', 13, 10, 0
+MSG_A20:     db 'Enabling A20...', 13, 10, 0
+MSG_A20_ERR: db 'A20 Gate Error!', 13, 10, 0
+MSG_LOAD:    db 'Loading Stage 2...', 13, 10, 0
+MSG_ERR:     db 'Disk Read Error!', 13, 10, 0
+
+; Get current cursor position -> DH, DL
+get_cursor_position:
+    mov ah, 0x03    ; Function: Get Cursor Position
+    mov bh, 0x00    ; Page 0
+    int 0x10
+    ret
 
 ; -----------------------------------------------------------------------------
 ; Function: print_string
@@ -85,11 +119,7 @@ print_string:
     ; Now CX = length, but, the following interrupt call would overwrite, so
     ; let's save it onto the stack
     push cx
-
-    ; Get current cursor position -> DH, DL
-    mov ah, 0x03    ; Function: Get Cursor Position
-    mov bh, 0x00    ; Page 0
-    int 0x10
+    call get_cursor_position
 
     ; Print String
     mov ax, 0x1301  ; Function: Write String (AH=13h), Update Cursor (AL=01h)
@@ -101,6 +131,57 @@ print_string:
     int 0x10
 
     popa
+    ret
+
+; -----------------------------------------------------------------------------
+; Function: check_a20
+; Returns: AX = 1 if enabled, AX = 0 if disabled
+; -----------------------------------------------------------------------------
+check_a20:
+    pushf
+    push ds
+    push es
+    push di
+    push si
+
+    cli
+
+    xor ax, ax
+    mov es, ax
+    mov di, 0x7dfe ; 0x0000:0x7dfe (Boot signature)
+
+    mov ax, 0xffff
+    mov ds, ax
+    mov si, 0x7e0e ; 0xffff:0x7e0e = 0x107dfe
+
+    mov al, [es:di]
+    push ax
+
+    mov al, [ds:si]
+    push ax
+
+    mov byte [es:di], 0x00
+    mov byte [ds:si], 0xff
+
+    cmp byte [es:di], 0xff
+
+    pop ax
+    mov [ds:si], al
+
+    pop ax
+    mov [es:di], al
+
+    mov ax, 0
+    je .done
+
+    mov ax, 1
+
+.done:
+    pop si
+    pop di
+    pop es
+    pop ds
+    popf
     ret
 
 ; -----------------------------------------------------------------------------
@@ -137,6 +218,8 @@ gdt_null:           ; Mandatory null descriptor
     dd 0x0
     dd 0x0
 
+; Alternative way to exress the following more compactly:
+; dq 0x00CF9A000000FFFF
 gdt_code:           ; Code segment descriptor
     dw 0xffff       ; Limit (bits 0-15)
     dw 0x0          ; Base (bits 0-15)
@@ -145,6 +228,8 @@ gdt_code:           ; Code segment descriptor
     db 11001111b    ; Granularity 4KB, 32-bit, Limit (bits 16-19)
     db 0x0          ; Base (bits 24-31)
 
+; Alternative way to exress the following more compactly:
+; dq 0x00CF92000000FFFF
 gdt_data:           ; Data segment descriptor
     dw 0xffff
     dw 0x0
@@ -169,6 +254,9 @@ DATA_SEG equ gdt_data - gdt_start
 [bits 32]
 
 init_pm:
+    ; -------------------------------------------------------------------------
+    ; 5. Jump to C Code
+    ; -------------------------------------------------------------------------
     mov ax, DATA_SEG        ; Update segment registers
     mov ds, ax
     mov ss, ax
@@ -179,7 +267,8 @@ init_pm:
     mov ebp, 0x90000        ; Update stack position
     mov esp, ebp
 
-    call 0x1000             ; Call our C kernel loaded at 0x1000
+    push dword edx          ; Pass cursor position
+    call 0x1000             ; Call our C stage2 loaded at 0x1000
     jmp $
 
 ; -----------------------------------------------------------------------------
