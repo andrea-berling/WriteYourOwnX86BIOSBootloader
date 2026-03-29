@@ -54,7 +54,7 @@ brew install x86_64-elf-gcc
 
 #### Windows
 
-> [!NOTE]
+> [!WARNING]
 > These instructions are provided as a "best effort" guide. As the author does not use Windows, consider this a homework exercise to figure out the exact details! :)
 
 **Recommended: MSYS2**
