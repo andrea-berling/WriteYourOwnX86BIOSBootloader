@@ -2,6 +2,8 @@
 
 Welcome to the **"Make Your Own BIOS Bootloader"** workshop! In this session, you will build a legacy BIOS bootloader from scratch using x86 assembly and C.
 
+![thinkpadx220](./img/thinkpadx220.jpg)
+
 ## 📁 Project Structure
 
 ```
@@ -279,3 +281,14 @@ See `stage2/main.c`.
 We need a "flat binary" (no ELF/PE headers) because the BIOS doesn't understand executable formats. We use a linker script to place our code at the correct memory address (`0x1000`).
 
 See `stage2/linker.ld`.
+
+## Running it on real hardware
+
+If you have some old hardware lying around, like the ThinkPad X220 you can see in the picture at the top of this README, you can run your moonshine bootloader for real! Probably, you can definitely try though :) Many modern machines don't support legacy BIOS booting anymore, so you might be out of luck with newer hardware. The ThinkPad is an example of a device that sits in the middle, supporting both old-style legacy BIOS bootings, as well as UEFI bootloaders.
+
+1. `make build/disk.img` to build the final image
+2. Stick a USB drive or other bootable media into your machine, and write the disk image to it: `sudo dd if=build/disk.img of=<your-device>` (e.g. `sudo dd if=./build/disk.img of=/dev/sda`).
+
+   Note: we want to write to the medium starting from the first sector, so make sure you are using the file for the *entire* device instead of the file for a partition (e.g. `/dev/sda` instead of `/dev/sda1` )
+3. In your old device's firmware configuration menu (also called the Setup Menu, usually reachable by pressing F2 during startup, or some other magic key), put the USB drive as the first option in the boot device list, and if applicable, make sure that "legacy BIOS booting" is enabled
+4. Stick the USB in the machine, turn it on, and profit!
